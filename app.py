@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Initialize FastAPI app
-app = FastAPI()
+app = FastAPI(docs_url="/docs")
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -120,52 +120,4 @@ async def analyze_image(request: ImageAnalysisRequest):
     except Exception as e:
         logger.error(f"Error in analyze_image: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-    try:
-        # 요청 데이터 로깅
-        logger.info("Request received")
-        logger.debug(f"Message: {request.message}")
-        
-        # base64 이미지 데이터 길이만 로깅 (전체 데이터는 너무 김)
-        base64_image = request.file
-        logger.debug(f"Base64 image length: {len(base64_image)}")
-        
-        # base64 데이터 처리 전후 비교를 위한 로깅
-        if ',' in base64_image:
-            base64_image = base64_image.split(',')[1]
-        base64_image = base64_image.replace('\n', '').replace('\r', '')
-        logger.debug(f"Processed base64 length: {len(base64_image)}")
-        
-        # base64 디코딩 시도
-        try:
-            image_bytes = base64.b64decode(base64_image)
-            logger.debug(f"Successfully decoded base64. Image size: {len(image_bytes)} bytes")
-        except Exception as e:
-            logger.error(f"Base64 decoding failed: {str(e)}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid base64 image data: {str(e)}"
-            )
-
-        # OpenAI API 호출
-        try:
-            logger.info("Calling OpenAI API")
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=messages,
-                max_tokens=500
-            )
-            logger.info("OpenAI API call successful")
-        except Exception as api_error:
-            logger.error(f"OpenAI API error: {str(api_error)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"OpenAI API Error: {str(api_error)}"
-            )
-
-        return ImageAnalysisResponse(
-            response=response.choices[0].message.content
-        )
-        
-    except Exception as e:
-        logger.error(f"Error in analyze_image: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+  
